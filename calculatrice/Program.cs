@@ -1,76 +1,99 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 
 Console.WriteLine("Quel est votre calcul ?");
 string calcul = Console.ReadLine();
 
-List<Operator> operators = new List<Operator>();
+List<Operator> operators = parseCalcul(calcul);
 
-string OPERATOR = "OPERATOR";
-string NUMBER = "NUMBER";
-
-string partialNumber = "";
-int i = 0;
-foreach (var character in calcul.ToCharArray())
+string sum = operators[0].Value;
+for (int j = 0; j < operators.Count; j++)
 {
-    string c = Convert.ToString(character);
-    bool isNumber = int.TryParse(c, out int number);
-    if (isNumber)
+    var op = operators[j];
+    if (op.Type == OperatorsEnum.OPERATOR)
     {
-        partialNumber += c;
-    }
-    else if (c == "*" || c == "+" || c == "-" || c == "/")
-    {
-        if (partialNumber.Length > 0)
+        if (j + 1 < operators.Count)
         {
-            operators.Add(new Operator(partialNumber, NUMBER));
-            partialNumber = "";
-        }
-        if (operators.Count <= 0 || operators.Last().Type == OPERATOR)
-        {
-            Console.WriteLine("Erreur de syntaxe");
-            return;
-        }
-        operators.Add(new Operator(c, OPERATOR));
-    }
-    i++;
-}
+            int int1 = Convert.ToInt32(sum);
+            int int2 = Convert.ToInt32(operators[j + 1].Value);
 
-if (partialNumber.Length > 0)
-{
-    operators.Add(new Operator(partialNumber, NUMBER));
-}
-if (operators.Last().Type == OPERATOR)
-{
-    Console.WriteLine("Erreur de syntaxe");
-    return;
-}
-
-int sum = 0;
-
-int j = 0;
-foreach (var op in operators)
-{
-    if (op.Type == OPERATOR)
-        {
             switch (op.Value)
             {
-            case "+":
-                string val1 = operators[j - 1].Value;
-                string val2 = operators[j + 1].Value;
-                operators[j + 1] = new Operator(addValues(val1, val2), NUMBER );
-                break;
+                case "+":
+                    sum = (int1 + int2).ToString();
+                    break;
+
+                case "-":
+                    sum = (int1 - int2).ToString();
+                    break;
+
+                case "*":
+                    sum = (int1 * int2).ToString();
+                    break;
+
+                case "/":
+                    sum = (int1 / int2).ToString();
+                    break;
             }
+
+            j++; 
         }
-    j++;
+    }
 }
-static string addValues(string val1, string val2)
+
+Console.WriteLine(sum);
+
+static List<Operator> parseCalcul(string line)
 {
-    int int1 = Convert.ToInt32(val1);
-    int int2 = Convert.ToInt32(val2);
+    List<Operator> operators = new List<Operator>();
+    string partialNumber = "";
+    int i = 0;
 
-    int sum = int1 + int2;
+    // on parcours la string pour y extraire les valeurs des opérateurs
+    foreach (var character in line.ToCharArray())
+    {
+        string c = Convert.ToString(character);
+        bool isNumber = int.TryParse(c, out int number);
+        if (isNumber) // cas ou c'est un nombre
+        {
+            partialNumber += c;
+        }
+        else if (c == "*" || c == "+" || c == "-" || c == "/") //cas ou c'est un opérateur
+        {
+            if (partialNumber.Length > 0)
+            {
+                operators.Add(new Operator(partialNumber, OperatorsEnum.NUMBER));
+                partialNumber = "";
+            }
+            if (operators.Count <= 0 || operators.Last().Type == OperatorsEnum.OPERATOR)
+            {
+                Console.WriteLine("Erreur de syntaxe");
+            }
+            operators.Add(new Operator(c, OperatorsEnum.OPERATOR));
+        }
+        i++;
+    }
 
-    return Convert.ToString(sum);
+    // après avoir parcouru toute la liste, on ajoute alors le dernier nombre
+    if (partialNumber.Length > 0)
+    {
+        operators.Add(new Operator(partialNumber, OperatorsEnum.NUMBER));
+    }
+
+    // si justement ce n'est pas un nombre alors y'a une erreur
+    if (operators.Last().Type == OperatorsEnum.OPERATOR)
+    {
+        Console.WriteLine("Erreur de syntaxe");
+    }
+
+    return operators;
+}
+
+static class OperatorsEnum
+{
+    public static string NUMBER = "NUMBER";
+    public static string OPERATOR = "OPERATOR";
+
 }
 class Operator
 {
@@ -83,3 +106,4 @@ class Operator
         this.Type = type;
     }
 }
+
